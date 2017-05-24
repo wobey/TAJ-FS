@@ -115,4 +115,81 @@ public class SysLib {
 	        ((b[offset+2] & 0xff) << 8) + (b[offset+3] & 0xff);
 	return n;
     }
+    
+    /*
+    Open the file in a given mode (r, w, w+, or a), set the seek pointer
+    (0 for r/w/w+, EOF for a). If the file does not exist (under w, w+, or a), 
+    it is created. If the file does not exist under append (a) mode, return -1.
+    If the calling calling thread's file descriptor table is full, return -2.
+    Otherwise, returns file descriptor for the file.
+    */
+    public int format(int maxFiles)
+    {
+        
+    }
+    
+    /*
+    Read up to buffer.length() bytes from the file into the buffer, starting at
+    the seek pointer, ending at EOF if less than the buffer length. Increments the
+    seek pointer by the number of bytes read. Returns the number of read bytes
+    or -1 on failure.
+    */
+    public int read(int fileDescriptor, byte buffer[])
+    {
+        
+    }
+    
+    /*
+    Write the content of the buffer ot the file, starting at the seek pointer.
+    This operation may overwrite and/or append. Increments the seek pointer by the
+    number of bytes written. Returns the number of bytes written, or -1 on failure.
+    */
+    public int write(int fileDescriptor, byte buffer[])
+    {
+        
+    }
+    
+    /*
+    Offset can be pos or neg. Origin is within 0, 1, 2. Updates the seek pointer
+    based on offset and origin combo:
+    origin = 0: seek is moved to beginning of file + offset;
+    origin = 1: seek is moved to current value + offset;
+    origin = 2: seek is moved to size of file + offset.
+    If origin and offset makes seek negative, seek pointer is set to 0.
+    If origin and offset makes seek greater than EOF, the seek
+    pointer is set to EOF.
+    Return 0 for success, -1 on failure.
+    */
+    public int seek(int fileDescriptor, int offset, int origin)
+    {
+        
+    }
+    
+    /*
+    Closes file, commit all file transactions, unregister file from calling
+    thread's descriptor table.
+    Returns 0 for success, -1 on failure.
+    */
+    public int close(int fileDescriptor)
+    {
+        
+    }
+    
+    /*
+    Delete file and free all blocks used by file.
+    Open files may not be deleted.
+    Return 0 for success, -1 if file is open.
+    */
+    public int delete(String fileName)
+    {
+        
+    }
+    
+    /*
+    Return size in bytes of file.
+    */
+    public int fsize(int fileDescriptor)
+    {
+        
+    }
 }
