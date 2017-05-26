@@ -22,7 +22,7 @@ public class Directory
     /*
     Initializes the Directory instance with this data[] (made with directoryToBytes())
     */
-    public int bytes2Directory(byte data[])//bytesToDirectory(byte data[])
+    public /*int*/void bytes2directory(byte data[])//bytesToDirectory(byte data[])
     {
         offset = 0;
         String tempFileName;
@@ -43,7 +43,7 @@ public class Directory
             tempFileName.getChars(0, fileSize[i], fileNames[i], 0);
         }
         
-        return numberOfEntries;
+        //return numberOfEntries;
     }
     
     /*
@@ -52,11 +52,11 @@ public class Directory
     note: only meaningful directory info should be converted to bytes
     (only basic data).
     */
-    public byte[] directory2Bytes()//directory2Bytes()
+    public byte[] directory2bytes()//directory2Bytes()
     {
         offset = 0;
         String tempFileName;
-        byte [] byteArray = new byte[NUMBER_OF_INODE_BLOCKS];
+        byte [] byteArray = new byte[NUMBER_OF_INODE_BLOCKS * fileSize.length];
         
         // store file sizes
         for (int i = 0; i < fileSize.length; ++i)
@@ -81,7 +81,31 @@ public class Directory
     */
     public short ialloc(String filename)//inodeAllocate(String filename)
     {
+        // ensure the name doesn't exist
+        if (namei(filename) != -1)
+            return -1;
         
+        // find an open inode
+        for (short i = 0; i < fileSize.length; ++i)
+        {
+            if (fileSize[i] ==0)
+            {
+                int size;
+                
+                // ensure the correct file size constraints
+                if (filename.length() > FILENAME_MAX_CHARS)
+                    size = FILENAME_MAX_CHARS;
+                else
+                    size = filename.length();
+                
+                fileSize[i] = size;
+                filename.getChars(0, size, fileNames[i], 0);
+            
+                return i;
+            }
+        }
+        
+        return -1;
     }
     
     /*
@@ -90,7 +114,14 @@ public class Directory
     */
     public boolean ifree(short iNumber)//inodeFree(short iNumber)
     {
-        
+        if (iNumber > 0 && iNumber < fileSize.length)
+        {
+            fileSize[iNumber] = 0;
+            //fileNames[iNumber] = new char[fileSize.length];
+            return true;
+        }
+        else
+            return false;
     }
     
     /*
@@ -98,6 +129,15 @@ public class Directory
     */
     public short namei(String filename)//inodeOfNames(String filename)
     {
+        //String tempFileName;
         
+        for (short i = 0; i < fileSize.length; ++i)
+        {
+            if (fileSize[i] > 0 && 
+                    filename.equals(new String(fileNames[i], 0 , fileSize[i])))//tempFileName = new String(fileNames[i], 0 , fileSize[i])))
+                return i;
+        }
+        
+        return -1;
     }
 }
