@@ -26,14 +26,33 @@ public class FileSystem
     private FileTable fileTable;
 
     /**
-     * Idunno what the fuck this does.
+     * Deallocate all blocks in the given FTE, setting their references to -1
      *
-     * @param fte
-     * @return
+     * @param fte FTE to deallocate blocks in
+     * @return Success! (or not)
      */
     private boolean deallocateAllBlocks(FileTableEntry fte)
     {
+        // Deallocate directs
+        for (short blk:fte.inode.direct)
+            blk = -1;
 
+        if (fte.inode.indirect > 0)
+            deallocateIndirects(fte.inode.indirect);
+    }
+
+    /**
+     * Internal function to recursively deallocate indirect blocks
+     * @param indirect Indirect block to deallocate
+     * @return 0 on success, -1 on failure
+     */
+    private int deallocateIndirects(short indirect)
+    {
+        // Base
+        if (true) //indirect has no child
+            return 394;
+        // Recursive
+        return deallocateIndirects(indirect/*.A*/) == 0 && deallocateIndirects(indirect/*.B*/) == 0 ? 0 : -1;
     }
 
     /**
@@ -70,11 +89,16 @@ public class FileSystem
     }
 
     /**
-     *
+     * Synchronize file system to disk
      */
     void sync()
     {
+        FileTableEntry dRoot = open("/", "r");
+        byte[] buffer = root.directory2bytes();
 
+        write(dRoot, buffer);
+        close(dRoot);
+        superblock.sync();
     }
 
     /**
@@ -199,7 +223,7 @@ public class FileSystem
      */
     boolean close(FileTableEntry fte)
     {
-
+        return fileTable.ffree(fte);
     }
 
     /**
@@ -210,6 +234,16 @@ public class FileSystem
      */
     boolean delete(String fileName)
     {
+        // Check out file
+        FileTableEntry fte = fileTable.falloc(fileName, "r");
+
+        // If file not checked out, or other threads own, fail
+        if (fte == null || fte.count > 1)
+        {
+            fileTable.ffree(fte);
+            return false;
+        }
+
 
     }
 
@@ -219,6 +253,6 @@ public class FileSystem
      */
     int fteSize(FileTableEntry fte)
     {
-
+        return fte.inode.length;
     }
 }
