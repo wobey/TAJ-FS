@@ -1,8 +1,14 @@
+/* **********************************************************
+// Title: Directory.java
+// Author: John Fitzgerald
+// Date: 5-25-17
+// Description: 
+** *********************************************************/
 public class Directory 
 {
     private final static int FILENAME_MAX_CHARS = 30;
     private final static int TWICE_FILENAME_LENGTH = FILENAME_MAX_CHARS * 2;
-    private final static int NUMBER_OF_INODE_BLOCKS = 64;
+    private final static int NUM_INODE_BLOCKS = 64;
     private int fileSize[];
     private int offset;
     private char fileNames[][];
@@ -26,7 +32,7 @@ public class Directory
     {
         offset = 0;
         String tempFileName;
-        int numberOfEntries = data.length / (NUMBER_OF_INODE_BLOCKS);
+        int numberOfEntries = data.length / (NUM_INODE_BLOCKS);
         
         // set file sizes
         for (int i = 0; i < fileSize.length; ++i)
@@ -56,7 +62,7 @@ public class Directory
     {
         offset = 0;
         String tempFileName;
-        byte [] byteArray = new byte[NUMBER_OF_INODE_BLOCKS * fileSize.length];
+        byte [] byteArray = new byte[NUM_INODE_BLOCKS * fileSize.length];
         
         // store file sizes
         for (int i = 0; i < fileSize.length; ++i)
