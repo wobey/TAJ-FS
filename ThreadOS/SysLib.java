@@ -123,9 +123,24 @@ public class SysLib {
     If the calling calling thread's file descriptor table is full, return -2.
     Otherwise, returns file descriptor for the file.
     */
-    public int format(int maxFiles)
+    public static int format(int maxFiles)
     {
-        
+        return Kernel.interrupt(Kernel.INTERRUPT_SOFTWARE, Kernel.FORMAT, maxFiles, null);
+    }
+    
+    /*
+    Open the specified file in the given mode ("r": Read, "w": Write, "w+": 
+    Read/Write, "a": Append) and set the seek pointer to the appropriate location 
+    (0 for "r"/"w"/"w+", EOF for "a"). Returns an integer file descriptor for the 
+    file. If the file does not exist under "w"/"w+"/"a" modes, create it. If the 
+    file does not exist under "a" mode, return -1. If the calling thread's file 
+    descriptor table is full, return -2.Note: File descriptors returned must 
+    be > 2, so as not to overlap standard I/O.
+    */
+    public static int open(String fileName, String mode)
+    {
+        String[] array = {fileName, mode};
+        return Kernel.interrupt(Kernel.INTERRUPT_SOFTWARE, Kernel.OPEN, 0, array);
     }
     
     /*
@@ -134,9 +149,9 @@ public class SysLib {
     seek pointer by the number of bytes read. Returns the number of read bytes
     or -1 on failure.
     */
-    public int read(int fileDescriptor, byte buffer[])
+    public static int read(int fileDescriptor, byte buffer[])
     {
-        
+        return Kernel.interrupt(Kernel.INTERRUPT_SOFTWARE, Kernel.READ, fileDescriptor, buffer);
     }
     
     /*
@@ -144,9 +159,9 @@ public class SysLib {
     This operation may overwrite and/or append. Increments the seek pointer by the
     number of bytes written. Returns the number of bytes written, or -1 on failure.
     */
-    public int write(int fileDescriptor, byte buffer[])
+    public static int write(int fileDescriptor, byte buffer[])
     {
-        
+        return Kernel.interrupt(Kernel.INTERRUPT_SOFTWARE, Kernel.WRITE, fileDescriptor, buffer);
     }
     
     /*
@@ -160,9 +175,10 @@ public class SysLib {
     pointer is set to EOF.
     Return 0 for success, -1 on failure.
     */
-    public int seek(int fileDescriptor, int offset, int origin)
+    public static int seek(int fileDescriptor, int offset, int origin)
     {
-        
+        int[] array = {offset, origin};
+        return Kernel.interrupt(Kernel.INTERRUPT_SOFTWARE, Kernel.SEEK, fileDescriptor, array);
     }
     
     /*
@@ -170,9 +186,9 @@ public class SysLib {
     thread's descriptor table.
     Returns 0 for success, -1 on failure.
     */
-    public int close(int fileDescriptor)
+    public static int close(int fileDescriptor)
     {
-        
+        return Kernel.interrupt(Kernel.INTERRUPT_SOFTWARE, Kernel.CLOSE, fileDescriptor, null);
     }
     
     /*
@@ -180,16 +196,16 @@ public class SysLib {
     Open files may not be deleted.
     Return 0 for success, -1 if file is open.
     */
-    public int delete(String fileName)
+    public static int delete(String fileName)
     {
-        
+        return Kernel.interrupt(Kernel.INTERRUPT_SOFTWARE, Kernel.DELETE, 0, fileName);
     }
     
     /*
     Return size in bytes of file.
     */
-    public int fsize(int fileDescriptor)
+    public static int fsize(int fileDescriptor)
     {
-        
+        return Kernel.interrupt(Kernel.INTERRUPT_SOFTWARE, Kernel.SIZE, fileDescriptor, null);
     }
 }
