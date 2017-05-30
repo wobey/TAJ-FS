@@ -34,27 +34,21 @@ public class FileSystem
     private boolean deallocateAllBlocks(FileTableEntry fte)
     {
         // Deallocate directs
-        for (short blk : fte.inode.direct)
-            blk = -1;
+        for (int i = 0; i < fte.inode.direct.length; i++)
+            fte.inode.direct[i] = -1;
 
-        return fte.inode.indirect > 0 || deallocateIndirects(fte.inode.indirect);
-    }
+        if (fte.inode.indirect < 0)
+            return true;
 
-    /**
-     * Internal function to recursively deallocate indirect blocks
-     *
-     * @param indirect Indirect block to deallocate
-     * @return 0 on success, -1 on failure
-     */
-    private boolean deallocateIndirects(short indirect)
-    {
-        // Base
-        if (true) //indirect has no child
+        byte[] indirect = new byte[Disk.blockSize];
+
+        if (SysLib.rawread(fte.inode.indirect, indirect) <= 0)
             return false;
-        // Recursive
-        for (short child : indirect)
-        // If child is indirect, return recurse
-        // If child is direct, set -1
+
+        for (int i = 0; i < indirect.length; i++)
+            indirect[i] = -1;
+
+        return SysLib.rawwrite(fte.inode.indirect, indirect) > 0;
     }
 
     /**
@@ -190,7 +184,7 @@ public class FileSystem
         while (bufferSeek < buffer.length)
         {
             // Check if at end of block, set accordingly
-            block = fte.seekPtr % Disk.blockSize <= 0 ? fte.inode.getNextBlock() : fte.inode.findTargetBlock(fte.seekPtr);
+            block = fte.seekPtr % Disk.blockSize <= 0 ? fte.inode.getNextBlock(fte.mode, fte.seekPtr) : fte.inode.findTargetBlock(fte.seekPtr);
 
             iBuffer[0] = buffer[bufferSeek++];
 
@@ -228,6 +222,9 @@ public class FileSystem
      */
     int seek(FileTableEntry fte, int offset, int origin)
     {
+        if (fte.mode.equals("a"))
+            return -1;
+
         int seekPointer = fte.seekPtr, length = fte.inode.length;
 
         // Check args
@@ -298,23 +295,21 @@ public class FileSystem
         fte.inode.flag = 0;
 
         // Free all direct blocks
-        for (short direct : fte.inode.direct)
-            direct = -1;
+        for (int i = 0; i < fte.inode.direct.length; i++)
+            fte.inode.direct[i] = -1;
 
-        return delete(fte.inode.indirect);
-    }
-
-    // Recursively free indirect blocks, returns success
-    private boolean delete(short indirect)
-    {
-        // Base case
-        if (true)   // TODO: has no children
+        if (fte.inode.indirect < 0)
             return true;
-        else
-            for (short child : indirect)  // TODO: foreach child
-                if (!delete(child))
-                    return false;
-        return true;
+
+        byte[] indirect = new byte[Disk.blockSize];
+
+        if (SysLib.rawread(fte.inode.indirect, indirect) <= 0)
+            return false;
+
+        for (int i = 0; i < indirect.length; i++)
+            indirect[i] = -1;
+
+        return SysLib.rawwrite(fte.inode.indirect, indirect) > 0;
     }
 
     /**
