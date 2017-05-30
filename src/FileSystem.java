@@ -145,14 +145,30 @@ public class FileSystem
         if (!(fte.mode.equals("r") || fte.mode.equals("w+")) || fte == null || buffer == null)
             return -1;
 
-        byte iBuffer[];
-        short block = findBlock(fte);
-        int readBytes = 0;
+        byte[] iBuffer = new byte[1];
+        int readCount = 0, bufferSeek = 0;
 
-        while (fte.seekPtr < buffer.length)
+        // Until buffer full
+        while (bufferSeek < buffer.length)
         {
+            // Read to internal buffer
+            int r = SysLib.rawread(fte.inode.findTargetBlock(fte.seekPtr) , iBuffer);
 
+            if (r < 0)  // Error encountered
+                return -1;
+            else if (r == 0)    // EOF encountered
+                break;
+            else    // Byte read
+            {
+                // Increase read counter and seek pointer by number of bytes read
+                readCount += r;
+                fte.seekPtr += r;
+            }
+
+           buffer[bufferSeek++] = iBuffer[0];
         }
+
+        return readCount;
     }
 
     /**
@@ -168,7 +184,31 @@ public class FileSystem
         if (!(fte.mode.equals("w") || fte.mode.equals("w+") || fte.mode.equals("a")) || fte == null || buffer == null)
             return -1;
 
+        int bufferSeek = 0, writeCount = 0, block;
+        byte[] iBuffer = new byte[1];
 
+        while (bufferSeek < buffer.length)
+        {
+            // Check if at end of block, set accordingly
+            block = fte.seekPtr % Disk.blockSize <= 0 ? fte.inode.getNextBlock() : fte.inode.findTargetBlock(fte.seekPtr);
+
+            iBuffer[0] = buffer[bufferSeek++];
+
+            int w = SysLib.rawwrite(block, iBuffer);
+
+            if (w < 0)  // Error encountered
+                return -1;
+            else if (w == 0)    // EOF encountered
+                break;
+            else    // Byte read
+            {
+                // Increase write counter and seek pointer by number of bytes written
+                writeCount += w;
+                fte.seekPtr += w;
+            }
+        }
+
+        return writeCount;
     }
 
     /**
@@ -284,52 +324,5 @@ public class FileSystem
     int fteSize(FileTableEntry fte)
     {
         return fte.inode.length;
-    }
-
-    /**
-     * Find the block at the seek pointer of the given FTE
-     *
-     * @param fte FTE
-     * @return Block on success, -1 on failure
-     */
-    private short findBlock(FileTableEntry fte)
-    {
-        // Check direct blocks
-        for (int i = 0; i < fte.inode.direct.length; i++)
-        {
-            if (fte.seekPtr < Disk.blockSize * i)
-                return fte.inode.direct[i];
-        }
-
-        // Check indirect blocks
-        return findBlockIndirect(fte.seekPtr, fte.inode.indirect);
-    }
-
-    /**
-     * Recursively find indirect block at seek pointer of given FTE
-     *
-     * @param seekPointer Seek pointer of FTE in question
-     * @param indirect    Reference to indirect to recurse thru
-     * @return Block on success, -1 on failure
-     */
-    private short findBlockIndirect(int seekPointer, short indirect)
-    {
-        // Base
-        if (true /*indirect has direct*/)
-            for (int i = 0; i < indirect.direct.length; i++)
-            {
-                if (seekPointer < Disk.blockSize * i)
-                    return indirect.direct[i];
-            }
-
-        short result;
-        for (short child:indirect)
-        {
-            result = findBlockIndirect(seekPointer, child);
-            if (result > 0)
-                return result;
-        }
-
-        return -1;
     }
 }
