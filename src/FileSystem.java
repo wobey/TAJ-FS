@@ -34,25 +34,27 @@ public class FileSystem
     private boolean deallocateAllBlocks(FileTableEntry fte)
     {
         // Deallocate directs
-        for (short blk:fte.inode.direct)
+        for (short blk : fte.inode.direct)
             blk = -1;
 
-        if (fte.inode.indirect > 0)
-            deallocateIndirects(fte.inode.indirect);
+        return fte.inode.indirect > 0 || deallocateIndirects(fte.inode.indirect);
     }
 
     /**
      * Internal function to recursively deallocate indirect blocks
+     *
      * @param indirect Indirect block to deallocate
      * @return 0 on success, -1 on failure
      */
-    private int deallocateIndirects(short indirect)
+    private boolean deallocateIndirects(short indirect)
     {
         // Base
         if (true) //indirect has no child
-            return 394;
+            return false;
         // Recursive
-        return deallocateIndirects(indirect/*.A*/) == 0 && deallocateIndirects(indirect/*.B*/) == 0 ? 0 : -1;
+        for (short child : indirect)
+        // If child is indirect, return recurse
+        // If child is direct, set -1
     }
 
     /**
@@ -83,7 +85,6 @@ public class FileSystem
             byte[] rootData = new byte[rootSize];
             read(rootFTE, rootData);
             root.bytes2directory(rootData);
-            // root.bytesToDirectory(rootData); TODO REMOVE COMPAT
         }
         close(rootFTE);
     }
@@ -93,7 +94,7 @@ public class FileSystem
      */
     void sync()
     {
-        FileTableEntry dRoot = open("/", "r");
+        FileTableEntry dRoot = open("/", "w");
         byte[] buffer = root.directory2bytes();
 
         write(dRoot, buffer);
@@ -144,7 +145,14 @@ public class FileSystem
         if (!(fte.mode.equals("r") || fte.mode.equals("w+")) || fte == null || buffer == null)
             return -1;
 
+        byte iBuffer[];
+        short block = findBlock(fte);
+        int readBytes = 0;
 
+        while (fte.seekPtr < buffer.length)
+        {
+
+        }
     }
 
     /**
@@ -159,6 +167,8 @@ public class FileSystem
         // Check args
         if (!(fte.mode.equals("w") || fte.mode.equals("w+") || fte.mode.equals("a")) || fte == null || buffer == null)
             return -1;
+
+
     }
 
     /**
@@ -244,7 +254,27 @@ public class FileSystem
             return false;
         }
 
+        // Mark as unused
+        fte.inode.flag = 0;
 
+        // Free all direct blocks
+        for (short direct : fte.inode.direct)
+            direct = -1;
+
+        return delete(fte.inode.indirect);
+    }
+
+    // Recursively free indirect blocks, returns success
+    private boolean delete(short indirect)
+    {
+        // Base case
+        if (true)   // TODO: has no children
+            return true;
+        else
+            for (short child : indirect)  // TODO: foreach child
+                if (!delete(child))
+                    return false;
+        return true;
     }
 
     /**
@@ -254,5 +284,52 @@ public class FileSystem
     int fteSize(FileTableEntry fte)
     {
         return fte.inode.length;
+    }
+
+    /**
+     * Find the block at the seek pointer of the given FTE
+     *
+     * @param fte FTE
+     * @return Block on success, -1 on failure
+     */
+    private short findBlock(FileTableEntry fte)
+    {
+        // Check direct blocks
+        for (int i = 0; i < fte.inode.direct.length; i++)
+        {
+            if (fte.seekPtr < Disk.blockSize * i)
+                return fte.inode.direct[i];
+        }
+
+        // Check indirect blocks
+        return findBlockIndirect(fte.seekPtr, fte.inode.indirect);
+    }
+
+    /**
+     * Recursively find indirect block at seek pointer of given FTE
+     *
+     * @param seekPointer Seek pointer of FTE in question
+     * @param indirect    Reference to indirect to recurse thru
+     * @return Block on success, -1 on failure
+     */
+    private short findBlockIndirect(int seekPointer, short indirect)
+    {
+        // Base
+        if (true /*indirect has direct*/)
+            for (int i = 0; i < indirect.direct.length; i++)
+            {
+                if (seekPointer < Disk.blockSize * i)
+                    return indirect.direct[i];
+            }
+
+        short result;
+        for (short child:indirect)
+        {
+            result = findBlockIndirect(seekPointer, child);
+            if (result > 0)
+                return result;
+        }
+
+        return -1;
     }
 }
