@@ -1,4 +1,5 @@
 public class FileTable {
+
     private Vector table;
     private Directory dir;
 
