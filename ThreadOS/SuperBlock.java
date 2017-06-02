@@ -26,13 +26,13 @@ public class SuperBlock {
 
     //sync function, basically writes totalBlocks, totalIndoes, and freeList to the disk.
     public void sync() {
-        byte buffer = new byte[512];
+        byte[] buffer = new byte[512];
 
         SysLib.int2bytes(totalBlocks, buffer, 0);
         SysLib.int2bytes(totalInodes, buffer, 4);
         SysLib.int2bytes(freeList, buffer, 8);
 
-        SysLib.rawwrite(buffer, 0);
+        SysLib.rawwrite(0, buffer);
 
     }
 
@@ -43,7 +43,7 @@ public class SuperBlock {
         SysLib.rawread(freeList, data); //Reading the free list block
         int temp = freeList;
 
-        freeList = SysLib.bytes2int(temp, 0);
+        freeList = SysLib.bytes2int(data, 0);
 
         return temp;
     }
@@ -66,23 +66,24 @@ public class SuperBlock {
         if(numFiles % 16 == 0) {
             freeList = numFiles / 16 + 1;
         } else {
-            freeList = numFiles / 16 + 2;
+            freeList = numFiles / 16 + 2;  //The 6th block is the start of the freelist.
         }
 
         for(int i = freeList; i < 1000 - 1; i++) {
-            byte data = new byte[512];
+            byte[] data = new byte[512];
 
             for(int j = 0; j < 512; j++) {
                 data[j] = 0;
             }
 
-            SysLib.int2bytes(i + 1; data, 0);
+            SysLib.int2bytes(i + 1, data, 0);
             SysLib.rawwrite(i, data);
         }
 
+        byte[] data = new byte[512];
         for(int j = 0; j < 512; j++) {
 
-            byte data = new byte[512];
+
             data[j] = 0;
         }
         SysLib.int2bytes(-1, data, 0);
@@ -94,7 +95,7 @@ public class SuperBlock {
     }
 
     //returnBlock function, adds the new freed block to the front of free list based on its blockID
-    public int returnBlock(int blockID) {
+    public void returnBlock(int blockID) {
         byte[] data = new byte[512];
 
         SysLib.int2bytes(freeList, data, 0);
@@ -103,5 +104,6 @@ public class SuperBlock {
         freeList = blockID;
 
     }
+
 
 }
