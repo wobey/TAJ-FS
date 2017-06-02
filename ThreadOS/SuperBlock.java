@@ -18,6 +18,7 @@ public class SuperBlock {
             return;
         } else {
             totalBlocks = diskSize;
+            format(64);
 
         }
 
@@ -38,14 +39,20 @@ public class SuperBlock {
 
     //getBlocks basically returns the first free block from the free list. The top block is dequeued from the free list
     public int getFreeBlocks() {
-        byte[] data = new byte[512];
 
-        SysLib.rawread(freeList, data); //Reading the free list block
-        int temp = freeList;
+        if(freeList > 0 && freeList < totalBlocks) {
+            byte[] data = new byte[512];
 
-        freeList = SysLib.bytes2int(data, 0);
+            SysLib.rawread(freeList, data); //Reading the free list block
+            int temp = freeList;
 
-        return temp;
+            freeList = SysLib.bytes2int(data, 0);
+
+            return temp;
+        }
+
+        return -1;
+
     }
 
 
@@ -69,25 +76,27 @@ public class SuperBlock {
             freeList = numFiles / 16 + 2;  //The 6th block is the start of the freelist.
         }
 
+        byte [] tempData = null;
+
         for(int i = freeList; i < 1000 - 1; i++) {
-            byte[] data = new byte[512];
+            tempData = new byte[512];
 
             for(int j = 0; j < 512; j++) {
-                data[j] = 0;
+                tempData[j] = 0;
             }
 
-            SysLib.int2bytes(i + 1, data, 0);
-            SysLib.rawwrite(i, data);
+            SysLib.int2bytes(i + 1, tempData, 0);
+            SysLib.rawwrite(i, tempData);
         }
 
-        byte[] data = new byte[512];
+        tempData = new byte[512];
         for(int j = 0; j < 512; j++) {
 
 
-            data[j] = 0;
+            tempData[j] = 0;
         }
-        SysLib.int2bytes(-1, data, 0);
-        SysLib.rawwrite(1000 - 1, data);
+        SysLib.int2bytes(-1, tempData, 0);
+        SysLib.rawwrite(1000 - 1, tempData);
 
         sync();
 
