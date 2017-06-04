@@ -31,7 +31,7 @@ public class Kernel
    public final static int OPEN    = 14; // SysLib.open( String fileName )
    public final static int CLOSE   = 15; // SysLib.close( int fd )
    public final static int SIZE    = 16; // SysLib.size( int fd )
-   public final static int SEEK    = 17; // SysLib.seek( int fd, int offest, 
+   public final static int SEEK    = 17; // SysLib.seek( int fd, int offest,
    //              int whence )
    public final static int FORMAT  = 18; // SysLib.format( int files )
    public final static int DELETE  = 19; // SysLib.delete( String fileName )
@@ -54,7 +54,7 @@ public class Kernel
    private static SyncQueue waitQueue;  // for threads to wait for their child
    private static SyncQueue ioQueue;    // I/O queue
 
-   private final static int COND_DISK_REQ = 1; // wait condition 
+   private final static int COND_DISK_REQ = 1; // wait condition
    private final static int COND_DISK_FIN = 2; // wait condition
 
    // Standard input
@@ -66,10 +66,10 @@ public class Kernel
       TCB myTcb;
       switch( irq ) {
          case INTERRUPT_SOFTWARE: // System calls
-            switch( cmd ) { 
+            switch( cmd ) {
                case BOOT:
                   // instantiate and start a scheduler
-                  scheduler = new Scheduler( ); 
+                  scheduler = new Scheduler( );
                   scheduler.start( );
 
                   // instantiate and start a disk
@@ -138,7 +138,7 @@ public class Kernel
                            StringBuffer buf = ( StringBuffer )args;
 
                            // append the keyboard intput to this read buffer
-                           buf.append( s ); 
+                           buf.append( s );
 
                            // return the number of chars read from keyboard
                            return s.length( );
@@ -177,17 +177,46 @@ public class Kernel
                   cache.flush( );
                   return OK;
                case OPEN:    // to be implemented in project
-                  return OK;
+                  if((myTcb = scheduler.getMyTcb()) != null) {
+                  String[] s = (String[] ) args;
+                  return myTcb.getFd(fs.open(s[0], s[1]));
+                  } else {
+                  return ERROR;
+                  }
                case CLOSE:   // to be implemented in project
-                  return OK;
+                  if((myTcb = scheduler.getMyTcb()) != null) {
+                     FileTableEntry fileTableEntry = myTcb.getFtEnt(param);
+                     if(fileTableEntry == null || fs.close(fileTableEntry) == false)
+                     {
+                        return ERROR;
+                     }
+                     if(myTcb.returnFd(param) != fileTableEntry) {
+                        return ERROR;
+                     }
+                     return OK;
+                  }
+                  return ERROR;
                case SIZE:    // to be implemented in project
-                  return OK;
+                  if( (myTcb = scheduler.getMyTcb() ) != null) {
+                  FileTableEntry fileTableEntry = myTcb.getFtEnt(param);
+                     if(fileTableEntry != null) {
+                        return fs.fsize(fileTableEntry);
+                     }
+                  }
+                  return ERROR;
                case SEEK:    // to be implemented in project
-                  return OK;
+                  if(( myTcb = scheduler.getMyTcb()) != null) {
+                     int[] seekArgs =  ( int [] ) args;
+                     FileTableEntry fileTableEntry = myTcb.getFtEnt(param);
+                     if(fileTableEntry != null) {
+                        return fs.seek(fileTableEntry, seekArgs[0], seekArgs[1]);
+                     }
+                  }
+                  return ERROR;
                case FORMAT:  // to be implemented in project
-                  return OK;
+                  return (fs.format(param) == true) ? OK : ERROR;
                case DELETE:  // to be implemented in project
-                  return OK;
+                  return (fs.delete((String)args ) == true ) ? OK : ERROR;
             }
             return ERROR;
          case INTERRUPT_DISK: // Disk interrupts
@@ -211,7 +240,7 @@ public class Kernel
 
       try {
          //get the user thread class from its name
-         Class thrClass = Class.forName( thrName ); 
+         Class thrClass = Class.forName( thrName );
          if ( args.length == 1 ) // no arguments
             thrObj = thrClass.newInstance( ); // instantiate this class obj
          else {                  // some arguments
@@ -223,7 +252,7 @@ public class Kernel
             Object[] constructorArgs = new Object[] { thrArgs };
 
             // locate this class object's constructors
-            Constructor thrConst 
+            Constructor thrConst
                = thrClass.getConstructor( new Class[] {String[].class} );
 
             // instantiate this class object by calling this constructor
