@@ -66,7 +66,7 @@ public class FileSystem
         superblock = new SuperBlock(diskBlocks);
 
         // Create directory and register root
-        root = new Directory(superblock.inodeBlocks);
+        root = new Directory(superblock.totalInodes);
 
         // Create file table and store root
         fileTable = new FileTable(root);
@@ -122,8 +122,7 @@ public class FileSystem
      */
     FileTableEntry open(String fileName, String mode)
     {
-        return fileTable.falloc(fileName, mode);
-        // return fileTable.fteAlloc(fileName, mode); TODO REMOVE COMPAT
+        return fileTable.fteAllocate(fileName, mode);
     }
 
     /**
@@ -270,7 +269,7 @@ public class FileSystem
      */
     boolean close(FileTableEntry fte)
     {
-        return fileTable.ffree(fte);
+        return fileTable.fteFree(fte);
     }
 
     /**
@@ -282,12 +281,12 @@ public class FileSystem
     boolean delete(String fileName)
     {
         // Check out file
-        FileTableEntry fte = fileTable.falloc(fileName, "r");
+        FileTableEntry fte = fileTable.fteAllocate(fileName, "r");
 
         // If file not checked out, or other threads own, fail
         if (fte == null || fte.count > 1)
         {
-            fileTable.ffree(fte);
+            fileTable.fteFree(fte);
             return false;
         }
 
