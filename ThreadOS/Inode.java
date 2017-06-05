@@ -89,52 +89,20 @@ public class Inode
     }
     
 //    /*
-//    
+//                    *********TODO*********
+//    *********after Tim starts FileSystem.write()*********
 //    */
-//    public short getIndexBlockNumber()
+//    public int/*boolean*/ registerTargetBlock(int seekPtr, short indexBlockNumber)//setIndexBlock(short indexBlockNumber)
 //    {
+//        int index = seekPtr / Disk.blockSize;
 //        
+////        if (index < DIRECT_SIZE)
+////        {
+////            
+////        }
+////        
+//        return 0;
 //    }
-    
-    /*
-                    *********TODO*********
-    *********after Tim starts FileSystem.write()*********
-    */
-    public int/*boolean*/ registerTargetBlock(int seekPtr, short indexBlockNumber)//setIndexBlock(short indexBlockNumber)
-    {
-        int index = seekPtr / Disk.blockSize;
-        
-//        if (index < DIRECT_SIZE)
-//        {
-//            
-//        }
-//        
-        return 0;
-    }
-    
-    /*
-    used for FileSystem.write() will
-    */
-    public int getNextBlock(String mode, int seekPtr)
-    {
-        if (mode == "a")
-        {
-            // search for a valid block (next free from Superblock)
-            
-        }
-        
-        if (mode =="w" || mode == "w+")
-        {
-            // if seekptr is in middle of block, how do we find a valid next block to write to?
-            // may require each inode to hold a pointer to the next valid free block
-            
-            // returns the next block in sequence like findTargetBlock
-            // [the next viable block]
-            //return findTargetBlock(seekPtr + ???);
-        }
-        
-        return -1;
-    }
     
     /*
     Returns the target BlockID pointer (direct or indirect)
