@@ -223,7 +223,7 @@ public class Kernel
                   if( (myTcb = scheduler.getMyTcb() ) != null) {
                   FileTableEntry fileTableEntry = myTcb.getFtEnt(param);
                      if(fileTableEntry != null) {
-                        return fs.fteSize(fileTableEntry);
+                        return fs.fsize(fileTableEntry);
                      }
                   }
                   return ERROR;

@@ -21,7 +21,7 @@ public class FileTable {
         dir = directory;
     }
 
-    public synchronized FileTableEntry fteAllocate(String filename, String mode) {
+    public synchronized FileTableEntry /*fteAllocate*/ falloc(String filename, String mode) {
 
         short iNumber = -1;
         Inode inode = null;
@@ -86,7 +86,7 @@ public class FileTable {
 
     }
 
-    public synchronized boolean fteFree (FileTableEntry e) {
+    public synchronized boolean /*fteFree*/ ffree (FileTableEntry e) {
 
         Inode inode = new Inode(e.iNumber);
 
@@ -97,7 +97,7 @@ public class FileTable {
 
     }
 
-    public synchronized boolean fteEmpty() {
+    public synchronized boolean /*fteEmpty*/ fempty() {
 
         return table.isEmpty();
     }

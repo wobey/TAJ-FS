@@ -1,6 +1,6 @@
 public class SuperBlock {
     public int totalBlocks; //the number of diskblocks
-    public int totalInodes; //the number of iNodes
+    public int inodeBlocks;//totalInodes; //the number of iNodes
     public int freeList;    //the block number of the free list's head
 
 
@@ -11,10 +11,10 @@ public class SuperBlock {
         SysLib.rawread(0, superBlock);
 
         totalBlocks = SysLib.bytes2int(superBlock, 0);
-        totalInodes = SysLib.bytes2int(superBlock, 4);
+        /*totalInodes*/ inodeBlocks = SysLib.bytes2int(superBlock, 4);
         freeList = SysLib.bytes2int(superBlock, 8);
 
-        if(totalBlocks == diskSize && totalInodes > 0 && freeList >= 2) {
+        if(totalBlocks == diskSize && /*totalInodes*/inodeBlocks > 0 && freeList >= 2) {
             return;
         } else {
             totalBlocks = diskSize;
@@ -32,7 +32,7 @@ public class SuperBlock {
         SysLib.rawread(0, buffer);
 
         SysLib.int2bytes(totalBlocks, buffer, 0);
-        SysLib.int2bytes(totalInodes, buffer, 4);
+        SysLib.int2bytes(/*totalInodes*/inodeBlocks, buffer, 4);
         SysLib.int2bytes(freeList, buffer, 8);
 
         SysLib.rawwrite(0, buffer);
@@ -40,7 +40,7 @@ public class SuperBlock {
     }
 
     //getBlocks basically returns the first free block from the free list. The top block is dequeued from the free list
-    public int getFreeBlocks() {
+    public int /*getFreeBlocks*/ getFreeBlock() {
 
         if(freeList > 0 && freeList < totalBlocks) {
             byte[] data = new byte[512];
@@ -62,10 +62,10 @@ public class SuperBlock {
     //and returned to the disk
     public void format(int numFiles)
     {
-        totalInodes = numFiles;
+        /*totalInodes*/inodeBlocks = numFiles;
         Inode empty = null;
 
-        for(int i = 0; i < totalInodes; i++) {
+        for(int i = 0; i < /*totalInodes*/inodeBlocks; i++) {
             empty = new Inode();
             empty.flag = 0;
             empty.toDisk((short) i);
@@ -110,15 +110,17 @@ public class SuperBlock {
     }
 
     //returnBlock function, adds the new freed block to the front of free list based on its blockID
-    public void returnBlock(int blockID) {
+    public boolean returnBlock(int blockID) {
+        if (blockID < 0)
+            return false;
+        
         byte[] data = new byte[512];
 
         SysLib.int2bytes(freeList, data, 0);
         SysLib.rawwrite(blockID, data);
 
         freeList = blockID;
-
+        
+        return true;
     }
-
-
 }
