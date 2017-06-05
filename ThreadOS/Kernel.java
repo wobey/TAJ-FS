@@ -54,6 +54,8 @@ public class Kernel
    private static SyncQueue waitQueue;  // for threads to wait for their child
    private static SyncQueue ioQueue;    // I/O queue
 
+   private static FileSystem fs;
+   
    private final static int COND_DISK_REQ = 1; // wait condition
    private final static int COND_DISK_FIN = 2; // wait condition
 
@@ -82,6 +84,9 @@ public class Kernel
                   // instantiate synchronized queues
                   ioQueue = new SyncQueue( );
                   waitQueue = new SyncQueue( scheduler.getMaxThreads( ) );
+
+                  // TODO DO SHIT
+                  fs = new FileSystem(1000);
                   return OK;
                case EXEC:
                   return sysExec( ( String[] )args );
@@ -121,12 +126,14 @@ public class Kernel
                      ioQueue.enqueueAndSleep( COND_DISK_FIN );
                   return OK;
                case SYNC:     // synchronize disk data to a real file
+                  fs.sync();
+
                   while ( disk.sync( ) == false )
                      ioQueue.enqueueAndSleep( COND_DISK_REQ );
                   while ( disk.testAndResetReady( ) == false )
                      ioQueue.enqueueAndSleep( COND_DISK_FIN );
                   return OK;
-               case READ:
+               case READ:  // TODO FS?
                   switch ( param ) {
                      case STDIN:
                         try {
@@ -150,6 +157,14 @@ public class Kernel
                      case STDERR:
                         System.out.println( "threaOS: caused read errors" );
                         return ERROR;
+                     default:
+                        TCB tcb = scheduler.getMyTcb();
+                        if (tcb != null)
+                        {
+                           FileTableEntry fte = tcb.getFtEnt(param);
+                           if (fte != null)
+                              return fs.read(fte, (byte[]) args);
+                        }
                   }
                   // return FileSystem.read( param, byte args[] );
                   return ERROR;
@@ -164,8 +179,16 @@ public class Kernel
                      case STDERR:
                         System.err.print( (String)args );
                         break;
+                     default:
+                        TCB tcb = scheduler.getMyTcb();
+                        if (tcb != null)
+                        {
+                           FileTableEntry fte = tcb.getFtEnt(param);
+                           if (fte != null)
+                              return fs.write(fte, (byte[]) args);
+                        }
                   }
-                  return OK;
+                  return OK;  // TODO Possible -1
                case CREAD:   // to be implemented in assignment 4
                   return cache.read( param, ( byte[] )args ) ? OK : ERROR;
                case CWRITE:  // to be implemented in assignment 4
@@ -200,7 +223,7 @@ public class Kernel
                   if( (myTcb = scheduler.getMyTcb() ) != null) {
                   FileTableEntry fileTableEntry = myTcb.getFtEnt(param);
                      if(fileTableEntry != null) {
-                        return fs.fsize(fileTableEntry);
+                        return fs.fteSize(fileTableEntry);
                      }
                   }
                   return ERROR;

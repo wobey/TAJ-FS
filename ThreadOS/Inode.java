@@ -88,22 +88,6 @@ public class Inode
         //return 0;   // success
     }
     
-//    /*
-//                    *********TODO*********
-//    *********after Tim starts FileSystem.write()*********
-//    */
-//    public int/*boolean*/ registerTargetBlock(int seekPtr, short indexBlockNumber)//setIndexBlock(short indexBlockNumber)
-//    {
-//        int index = seekPtr / Disk.blockSize;
-//        
-////        if (index < DIRECT_SIZE)
-////        {
-////            
-////        }
-////        
-//        return 0;
-//    }
-    
     /*
     Returns the target BlockID pointer (direct or indirect)
     */

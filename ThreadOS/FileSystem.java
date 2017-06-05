@@ -107,7 +107,11 @@ public class FileSystem
         if (maxFiles < 0)
             return false;
 
+        while (!fileTable.fteEmpty());
+
+        superblock.format(maxFiles);
         root = new Directory(maxFiles);
+        fileTable = new FileTable(root);
 
         return true;
     }
@@ -138,30 +142,37 @@ public class FileSystem
         if (!(fte.mode.equals("r") || fte.mode.equals("w+")) || fte == null || buffer == null)
             return -1;
 
-        byte[] iBuffer = new byte[1];
-        int readCount = 0, bufferSeek = 0;
+        int reads = 0;
 
-        // Until buffer full
-        while (bufferSeek < buffer.length)
+        int offset = fte.seekPtr % Disk.blockSize;
+
+        int first = 1;
+
+        for (int b = 0; b < buffer.length / Disk.blockSize; b++)
         {
-            // Read to internal buffer
-            int r = SysLib.rawread(fte.inode.findTargetBlock(fte.seekPtr) , iBuffer);
-
-            if (r < 0)  // Error encountered
+            byte[] iBuffer = new byte[Disk.blockSize - offset * first];
+            if (SysLib.rawread(fte.inode.findTargetBlock(fte.seekPtr), iBuffer) < 0)
                 return -1;
-            else if (r == 0)    // EOF encountered
-                break;
-            else    // Byte read
-            {
-                // Increase read counter and seek pointer by number of bytes read
-                readCount += r;
-                fte.seekPtr += r;
-            }
 
-           buffer[bufferSeek++] = iBuffer[0];
+            System.arraycopy(iBuffer, 0, buffer, reads, iBuffer.length);
+
+            fte.seekPtr += iBuffer.length;
+            reads += iBuffer.length;
+
+            first = 0;
         }
 
-        return readCount;
+        byte[] iBuffer = new byte[(buffer.length - offset) % Disk.blockSize];
+
+        if (SysLib.rawread(fte.inode.findTargetBlock(fte.seekPtr), iBuffer) < 0)
+            return -1;
+
+        System.arraycopy(iBuffer, 0, buffer, reads, iBuffer.length);
+
+        fte.seekPtr += iBuffer.length;
+        reads += iBuffer.length;
+
+        return reads;
     }
 
     /**
@@ -178,25 +189,26 @@ public class FileSystem
             return -1;
 
         int bufferSeek = 0, writeCount = 0, block;
-        byte[] iBuffer = new byte[1];
+        byte[] iBuffer = new byte[Disk.blockSize];
 
         while (bufferSeek < buffer.length)
         {
+            int writes = 0;
+
             block =  fte.inode.findTargetBlock(fte.seekPtr);
+            if (block == 0)
+                block = superblock.getFreeBlocks();
 
-            iBuffer[0] = buffer[bufferSeek++];
+            for (int i = 0; i < iBuffer.length && bufferSeek < buffer.length; i++, bufferSeek++, writes++)
+                iBuffer[i] = buffer[bufferSeek];
 
-            int w = SysLib.rawwrite(block, iBuffer);
-
-            if (w < 0)  // Error encountered
+            if(SysLib.rawwrite(block, iBuffer) < 0)
                 return -1;
-            else if (w == 0)    // EOF encountered
-                break;
             else    // Byte read
             {
                 // Increase write counter and seek pointer by number of bytes written
-                writeCount += w;
-                fte.seekPtr += w;
+                writeCount += writes;
+                fte.seekPtr += writes;
             }
         }
 
