@@ -182,8 +182,7 @@ public class FileSystem
 
         while (bufferSeek < buffer.length)
         {
-            // Check if at end of block, set accordingly
-            block = fte.seekPtr % Disk.blockSize <= 0 ? fte.inode.getNextBlock(fte.mode, fte.seekPtr) : fte.inode.findTargetBlock(fte.seekPtr);
+            block =  fte.inode.findTargetBlock(fte.seekPtr);
 
             iBuffer[0] = buffer[bufferSeek++];
 
