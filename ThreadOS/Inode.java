@@ -113,6 +113,30 @@ public class Inode
     }
     
     /*
+    used for FileSystem.write() will
+    */
+    public int getNextBlock(String mode, int seekPtr)
+    {
+        if (mode == "a")
+        {
+            // search for a valid block (next free from Superblock)
+            
+        }
+        
+        if (mode =="w" || mode == "w+")
+        {
+            // if seekptr is in middle of block, how do we find a valid next block to write to?
+            // may require each inode to hold a pointer to the next valid free block
+            
+            // returns the next block in sequence like findTargetBlock
+            // [the next viable block]
+            //return findTargetBlock(seekPtr + ???);
+        }
+        
+        return -1;
+    }
+    
+    /*
     Returns the target BlockID pointer (direct or indirect)
     */
     public int/*short*/ findTargetBlock(int offset)
@@ -135,16 +159,13 @@ public class Inode
         if (offset >= length || indirect == -1)
             return -1;
         
-        short indrectBlock;
+        short indirectBlock;
         int blockWindow = 2 * (target - DIRECT_SIZE);
         byte[] tempData = new byte[Disk.blockSize];
         
         SysLib.rawread(indirect, tempData);
-        indrectBlock = SysLib.bytes2short(tempData, blockWindow);
+        indirectBlock = SysLib.bytes2short(tempData, blockWindow);
         
-        if (indrectBlock == 0)
-            return -1;
-        else
-            return indrectBlock;
+        return (indirectBlock == 0) ? -1 : indirectBlock;
     }
 }
