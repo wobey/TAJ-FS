@@ -29,6 +29,8 @@ public class SuperBlock {
     public void sync() {
         byte[] buffer = new byte[512];
 
+        SysLib.rawread(0, buffer);
+
         SysLib.int2bytes(totalBlocks, buffer, 0);
         SysLib.int2bytes(totalInodes, buffer, 4);
         SysLib.int2bytes(freeList, buffer, 8);
@@ -81,11 +83,15 @@ public class SuperBlock {
         for(int i = freeList; i < 1000 - 1; i++) {
             tempData = new byte[512];
 
+
+            //Setting all the tempData to 0.
             for(int j = 0; j < 512; j++) {
                 tempData[j] = 0;
             }
 
             SysLib.int2bytes(i + 1, tempData, 0);
+
+            //Writing the tempData to the disk
             SysLib.rawwrite(i, tempData);
         }
 
