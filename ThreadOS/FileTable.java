@@ -53,17 +53,25 @@ public class FileTable {
                         return null;
                     }
                 } else {
-                    //if the node for the particular file does not exist then
-                    //create a new iNode, and get the number from the directory
-                    //using the ialloc function
-                    if(noRead) {
-                        iNumber = dir.ialloc(filename);
-                        inode = new Inode(iNumber);
+                    if (inode.flag == USED || inode.flag == UNUSED || inode.flag == WRITE) {
                         break;
-                    } else if(!noRead) {
+                    } else {
+                        iNumber = -1;
                         return null;
+
                     }
-                }
+                } else {
+                        //if the node for the particular file does not exist then
+                        //create a new iNode, and get the number from the directory
+                        //using the ialloc function
+                        if(noRead) {
+                            iNumber = dir.ialloc(filename);
+                            inode = new Inode(iNumber);
+                            break;
+                        } else if(!noRead) {
+                            return null;
+                        }
+                    }
             }
 
         }
