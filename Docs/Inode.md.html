@@ -1,0 +1,40 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Inode.md</title><link rel="stylesheet" type="text/css" href="style.css"></head><body id="preview">
+<h1><a id="Inode_0"></a>Inode</h1>
+<p>Describe a file in the FileSystem.</p>
+<h2><a id="private_final_static_int_INODE_SIZE__32_2"></a>private final static int INODE_SIZE = 32</h2>
+<p>Dictate the size of an Inode in bytes.</p>
+<h2><a id="private_final_static_int_DIRECT_SIZE__11_4"></a>private final static int DIRECT_SIZE = 11</h2>
+<p>Dictate the number of direct pointers in an Inode.</p>
+<h2><a id="private_final_static_int_NUM_INODES_IN_BLOCK__16_6"></a>private final static int NUM_INODES_IN_BLOCK = 16</h2>
+<p>Dictate the number of Inode <em>structures</em> which will fit in a block.</p>
+<h2><a id="public_int_length_8"></a>public int length</h2>
+<p>File size of Inode in bytes.</p>
+<h2><a id="public_short_count_10"></a>public short count</h2>
+<p>Number of file table entries registered to this Inode.</p>
+<h2><a id="public_short_flag_12"></a>public short flag</h2>
+<p>Indicate the status of this Inode (0: unused, 1: used, 2+: TBD).</p>
+<h2><a id="public_short_direct_14"></a>public short direct[]</h2>
+<p>Pointers to direct blocks.</p>
+<h2><a id="public_short_indirect_16"></a>public short indirect</h2>
+<p>Pointer to indirect block.</p>
+<h2><a id="Inode_18"></a>Inode()</h2>
+<p>Construct an Inode with:<br>
+<code>length = 0</code> <code>count = 0</code> <code>flag = 1</code> <code>direct[*] = -1</code> <code>indirect = -1</code></p>
+<h2><a id="Inodeshort_blockID_21"></a>Inode(short blockID)</h2>
+<p>Construct an Inode from the Inode saved to disk in the given block.</p>
+<h2><a id="void_toDiskshort_blockID_23"></a>void toDisk(short blockID)</h2>
+<p>Save this Inode to disk in the given block.</p>
+<h2><a id="short_getIndexBlockNumber_25"></a>short getIndexBlockNumber()</h2>
+<blockquote>
+<p>Does something; this function is named but not detailed by the assignment docs</p>
+</blockquote>
+<h2><a id="boolean_setIndexBlockshort_indexBlockNumber_27"></a>boolean setIndexBlock(short indexBlockNumber)</h2>
+<blockquote>
+<p>Does something; this function is named but not detailed by the assignment docs</p>
+</blockquote>
+<h2><a id="short_findTargetBlockint_offset_29"></a>short findTargetBlock(int offset)</h2>
+<p>Return the block which the given offset resides in in the context of this Inode.</p>
+<h2><a id="int_getIndirectBlockint_offset_int_target_31"></a>int getIndirectBlock(int offset, int target)</h2>
+<p>Helper for findTargetBlock.</p>
+
+</body></html>

@@ -1,0 +1,30 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Directory.md</title><link rel="stylesheet" type="text/css" href="style.css"></head><body id="preview">
+<h1><a id="Directory_0"></a>Directory</h1>
+<p>Maintains a list of files within a given directory.</p>
+<h2><a id="private_final_static_int_FILENAME_MAX_CHARS__30_2"></a>private final static int FILENAME_MAX_CHARS = 30</h2>
+<p>Declares the maximum number of characters in a file name.</p>
+<h2><a id="private_final_static_int_NUM_INODE_BLOCKS__64_4"></a>private final static int NUM_INODE_BLOCKS = 64</h2>
+<p>Declares the number of allowed Inodes in a directory.</p>
+<h2><a id="private_int_fileSize_6"></a>private int fileSize[]</h2>
+<p>Store sizes of files in this directory.</p>
+<h2><a id="private_int_offset_8"></a>private int offset</h2>
+<p>Store position in array for byte array writing.</p>
+<h2><a id="private_char_fileNames_10"></a>private char fileNames[][]</h2>
+<p>Store names of files in this directory.</p>
+<h2><a id="public_Directoryint_maxFiles_12"></a>public Directory(int maxFiles)</h2>
+<p>Construct a Directory with the given maximum number of files. Initialize fileSize and fileNames to the given maximum number of files.</p>
+<h2><a id="public_void_bytesToDirectorybyte_data_WAS_bytes2directory_14"></a>public void bytesToDirectory(byte data[]) [WAS bytes2directory]</h2>
+<p>Initialize this Directory with given data.</p>
+<h2><a id="public_byte_directoryToBytes_WAS_directory2bytes_16"></a>public byte[] directoryToBytes [WAS directory2bytes]</h2>
+<p>Convert this Directory to a byte array.<br>
+Returns byte array.</p>
+<h2><a id="public_short_iallocString_filename_19"></a>public short ialloc(String filename)</h2>
+<p>Allocate a new Inode for the given filename.<br>
+Returns the Inode’s iNumber on success, -1 on failure.</p>
+<h2><a id="public_boolean_ifreeshort_iNumber_22"></a>public boolean ifree(short iNumber)</h2>
+<p>Delete the given iNumber.<br>
+Returns success.</p>
+<h2><a id="public_short_nameiString_filename_25"></a>public short namei(String filename)</h2>
+<p>Returns the iNumber of the given filename, -1 on failure.</p>
+
+</body></html>

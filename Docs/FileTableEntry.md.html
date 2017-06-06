@@ -1,0 +1,17 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>FileTableEntry.md</title><link rel="stylesheet" type="text/css" href="style.css"></head><body id="preview">
+<h1><a id="FileTableEntry_FTE_0"></a>FileTableEntry (FTE)</h1>
+<p>Record a file used by the parent thread.</p>
+<h2><a id="public_int_seekPtr_2"></a>public int seekPtr</h2>
+<p>The file seek pointer. Records the position of this FTE within the file <strong>in bytes</strong>.</p>
+<h2><a id="public_final_Inode_inode_4"></a>public final Inode inode</h2>
+<p>The Inode this FTE has registered.</p>
+<h2><a id="public_final_short_iNumber_6"></a>public final short iNumber</h2>
+<p>The number of the Inode this FTE has registered.</p>
+<h2><a id="public_int_count_8"></a>public int count</h2>
+<p>The number of threads sharing this entry.</p>
+<h2><a id="public_final_String_mode_10"></a>public final String mode</h2>
+<p>The access mode of this FTE. See <a href="FileSystem.md.html">FileSystem</a> for more information.</p>
+<h2><a id="public_FileTableEntryInode_inode_short_inodeNumber_String_mode_12"></a>public FileTableEntry(Inode inode, short inodeNumber, String mode)</h2>
+<p>Construct a FTE with the given Inode, inodeNumber, and mode. Sets <code>count = 1</code>, and places seekPtr based on the given mode.</p>
+
+</body></html>

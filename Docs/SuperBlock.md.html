@@ -1,0 +1,25 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>SuperBlock.md</title><link rel="stylesheet" type="text/css" href="style.css"></head><body id="preview">
+<h1><a id="SuperBlock_0"></a>SuperBlock</h1>
+<p>OS managed structure used to describe the number of disk blocks, the number of inodes, and the block number of the head block of the free list.</p>
+<h2><a id="public_int_totalBlocks_2"></a>public int totalBlocks</h2>
+<p>The number of disk blocks available to this file system, <em>including</em> this superblock.</p>
+<h2><a id="public_int_totalInodes_4"></a>public int totalInodes</h2>
+<p>The number of Inodes available to this file system.</p>
+<h2><a id="public_int_freeList_6"></a>public int freeList</h2>
+<p>The blockID of the free list’s head.</p>
+<h2><a id="public_SuperBlockint_diskSize_8"></a>public SuperBlock(int diskSize)</h2>
+<p>Create a new SuperBlock with the given disk size. Disk size must be greater than 0.</p>
+<h2><a id="public_void_sync_10"></a>public void sync()</h2>
+<p>Write totalBlocks, totalInodes, and freeList to disk superblock.<br>
+Returns 0 on success, -1 on failure.</p>
+<h2><a id="public_int_getFreeBlocks_13"></a>public int getFreeBlocks()</h2>
+<p>Dequeue the top block from the free list, increment freeList to the next free block.<br>
+Returns dequeued blockID on success, -1 on failure.</p>
+<h2><a id="public_void_returnBlockint_blockID_16"></a>public void returnBlock(int blockID)</h2>
+<p>Enqueue the given block to the end of the free list.<br>
+Returns 0 on success, -1 on failure.</p>
+<h2><a id="public_void_formatint_numFiles_19"></a>public void format(int numFiles)</h2>
+<p>Clears the disk of all that data and all the instance variables are set to default values<br>
+and returned to the disk</p>
+
+</body></html>

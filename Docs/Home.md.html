@@ -1,0 +1,35 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Home.md</title><link rel="stylesheet" type="text/css" href="style.css"></head><body id="preview">
+<h1>TAJ-FS</h1>
+<h2><a id="Statement_of_Work_0"></a>Statement of Work</h2>
+<p>Design and implement the file system in ThreadOS as specified above. Run Test5.java which is found in the ThreadOS directory. This test program will test the functionality of every feature and system call listed above and check the data consistency of your file system. Some of the things that are tested include:</p>
+<ol>
+<li>Does the filesystem allow one to read the same data from a file that was previously written?</li>
+<li>Are malicious operations handled appropriately and proper error codes returned? Those operations include file accesses with a negative seek pointer, too many files to be opened at a time per a thread and over the system, etc.</li>
+<li>Does the file system synchronize all data on memory with disk before a shutdown and reload those data from the disk upon the next boot?</li>
+</ol>
+<pre>
+                                    ѱ                                       
+                                    ѻ                                       
+     │                              Ѻ                              │        
+    .'.                           .' '.                           .'.       
+   (___)                        /_______\                        (___)      
+    ║║║                       .'         '.                       ║║║       
+   ╤╩╩╩╤                     /             \                     ╤╩╩╩╤      
+   │   │                │   │               │   │                │   │      
+   │   │      │       .' '. ├╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫┤ .' '.       │      │   │      
+   │   │     (_)     (_____)\_______________/(_____)     (_)     │   │      
+   ╪═══╪     │║│   │  ║║║║├──┴─────────────┴──┤║║║║  │   │║│     ╪═══╪      
+   │   │     ╪╩╪   ├─┬╨╨╨╨┤ ┌┬┬┬┬┬┬┬┬┬┬┬┬┬┬┬┐ ├╨╨╨╨┬─┤   ╪╩╪     │   │      
+   │   │     │ │   ├─┼────┤ ├┼┴┴┴┴┴┴┴┴┴┴┴┴┴┼┤ ├────┼─┤   │ │     │   │      
+   │   │     │ │   │─│╭──╮│ ├┤   ╭─────╮   ├┤ │╭──╮│─│   │ │     │   │      
+   │   │     ╪═╪   │ ││  ││ ├┤  ╭╯     ╰╮  ├┤ ││  ││ │   ╪═╪     │   │      
+   ╪═══╪     │ │   │─│└──┘│ ├┤  │       │  ├┤ │└──┘│─│   │ │     ╪═══╪      
+   │   │     ╪═╪   ├─┼────┤ ├┤  ├───────┤  ├┤ ├────┼─┤   ╪═╪     │   │      
+   │   │     │ │   │─│╭──╮│ ├┤  │       │  ├┤ │╭──╮│─│   │ │     │   │      
+   │   │     │ │   │ ││  ││ └┘  │  ╭─╮  │  └┘ ││  ││ │   │ │     │   │      
+  ┌┴───┴┬────┴─┴───┴─┴┴──┴┴─────┴──┴─┴──┴─────┴┴──┴┴─┴───┴─┴────┬┴───┴┐     
+  │     ├───────────────────────────────────────────────────────┤     │     
+  │     │                                                       │     │     
+  └─────┴───────────────────────────────────────────────────────┴─────┘     
+</pre>
+</body></html>
