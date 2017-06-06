@@ -7,6 +7,9 @@
 <p>The root Directory for this FileSystem. See <a href="Directory.md.html">Directory</a>.</p>
 <h2><a id="private_FileTable_fileTable_6"></a>private FileTable fileTable</h2>
 <p>The FileTable for this FileSystem. See <a href="FileTable.md.html">FileTable</a>.</p>
+<h2>private static final int SEEK_SET = 0</h2>
+<h2>private static final int SEEK_CUR = 1</h2>
+<h2>private static final int SEEK_END = 2</h2>
 <h2><a id="public_FileSystemint_diskBlocks_8"></a>public FileSystem(int diskBlocks)</h2>
 <p>Construct a FileSystem with the given number of blocks; initializes superblock, root, and fileTable; and reconstructs directory information from disk if present.</p>
 <h2><a id="void_sync_10"></a>void sync()</h2>
@@ -32,6 +35,8 @@ Returns the number of read bytes or -1 on failure.</p>
 <h2><a id="int_writeFileTableEntry_fte_byte_buffer_30"></a>int write(FileTableEntry fte, byte[] buffer)</h2>
 <p>Write the contents of the given buffer to the given file, starting at the seek pointer. <strong>This operation may overwrite and/or append</strong>. Increments the seek pointer by the number of bytes written.<br>
 Returns the number of bytes written or -1 on failure.</p>
+<h2>public int writeToTheDisk(FileTableEntry fte, byte[] buffer)</h2>
+<p>Helper for write.</p>
 <h2><a id="int_seekFileTableEntry_fte_int_offset_int_origin_33"></a>int seek(FileTableEntry fte, int offset, int origin)</h2>
 <p>Offset may be positive or negative. Origin must be within {0, 1, 2}.<br>
 Update the seek pointer based on the given offset and origin:</p>
@@ -45,5 +50,9 @@ Update the seek pointer based on the given offset and origin:</p>
 Returns 0 for all above cases, -1 on failure.</p>
 <h2><a id="private_boolean_deallocateAllBlocksFileTableEntry_fte_43"></a>private boolean deallocateAllBlocks(FileTableEntry fte)</h2>
 <p>Deallocate all blocks in the given FTE, setting their references to -1.</p>
+<h2>private void returnAllBlocks(byte[] data)</h2>
+<p>Return blocks referenced by the given byte[].</p>
+<h2>private void deallocate(FileTableEntry files)</h2>
+<p>Deallocate all direct blocks in the given FTE.</p>
 
 </body></html>

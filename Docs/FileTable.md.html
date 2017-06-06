@@ -13,13 +13,13 @@
 <h3><a id="private_final_int_UNUSED__1_11"></a>private final int UNUSED = -1</h3>
 <h2><a id="public_FileTableDirectory_directory_12"></a>public FileTable(Directory directory)</h2>
 <p>Construct a FileTable with the given root directory. Initializes table.</p>
-<h2><a id="public_synchronized_FileTableEntry_fteAllocateString_filename_String_mode_WAS_falloc_14"></a>public synchronized FileTableEntry fteAllocate(String filename, String mode) [WAS falloc]</h2>
+<h2><a id="public_synchronized_FileTableEntry_fteAllocateString_filename_String_mode_WAS_falloc_14"></a>public synchronized FileTableEntry falloc(String filename, String mode)</h2>
 <p>Allocate a new FTE for the given file name with the given mode. Find or allocate the corresponding Inode, increment its count, and write it to disk.<br>
 Returns a reference to the new FTE on success, null on failure.</p>
-<h2><a id="public_synchronized_boolean_fteFreeFileTableEntry_e_WAS_ffree_17"></a>public synchronized boolean fteFree(FileTableEntry e) [WAS ffree]</h2>
+<h2><a id="public_synchronized_boolean_fteFreeFileTableEntry_e_WAS_ffree_17"></a>public synchronized boolean fFree(FileTableEntry e)</h2>
 <p>Save the Inode for the given FTE to disk and free the given FTE.<br>
 Returns success.</p>
-<h2><a id="public_synchronized_boolean_fteEmpty_WAS_fempty_20"></a>public synchronized boolean fteEmpty() [WAS fempty]</h2>
+<h2><a id="public_synchronized_boolean_fteEmpty_WAS_fempty_20"></a>public synchronized boolean fEmpty()</h2>
 <p>Returns the emptiness of <code>table</code>.</p>
 
 </body></html>

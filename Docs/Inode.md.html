@@ -22,19 +22,18 @@
 <code>length = 0</code> <code>count = 0</code> <code>flag = 1</code> <code>direct[*] = -1</code> <code>indirect = -1</code></p>
 <h2><a id="Inodeshort_blockID_21"></a>Inode(short blockID)</h2>
 <p>Construct an Inode from the Inode saved to disk in the given block.</p>
-<h2><a id="void_toDiskshort_blockID_23"></a>void toDisk(short blockID)</h2>
+<h2>public void toDisk(short blockID)</h2>
 <p>Save this Inode to disk in the given block.</p>
-<h2><a id="short_getIndexBlockNumber_25"></a>short getIndexBlockNumber()</h2>
-<blockquote>
-<p>Does something; this function is named but not detailed by the assignment docs</p>
-</blockquote>
-<h2><a id="boolean_setIndexBlockshort_indexBlockNumber_27"></a>boolean setIndexBlock(short indexBlockNumber)</h2>
-<blockquote>
-<p>Does something; this function is named but not detailed by the assignment docs</p>
-</blockquote>
+<h2>int getIndexNumber(int fte, short offset)</h2>
+<p>TODO</p>
+<h2>public int writeToDisk(int target, short offset)</h2>
+<p>TODO</p>
+<h2>public int setTarget(int target, short offset)</h2>
+<p>TODO</p>
+<h2>public boolean setBlock(short indexNumber)</h2>
+<p>TODO</p>
 <h2><a id="short_findTargetBlockint_offset_29"></a>short findTargetBlock(int offset)</h2>
 <p>Return the block which the given offset resides in in the context of this Inode.</p>
-<h2><a id="int_getIndirectBlockint_offset_int_target_31"></a>int getIndirectBlock(int offset, int target)</h2>
-<p>Helper for findTargetBlock.</p>
-
+<h2>byte[] freeIndirectBlock()</h2>
+<p>TODO</p>
 </body></html>

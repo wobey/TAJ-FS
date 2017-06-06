@@ -3,6 +3,7 @@
 <p>Maintains a list of files within a given directory.</p>
 <h2><a id="private_final_static_int_FILENAME_MAX_CHARS__30_2"></a>private final static int FILENAME_MAX_CHARS = 30</h2>
 <p>Declares the maximum number of characters in a file name.</p>
+<h2>private final static int TWICE_FILENAME_LENGTH = FILENAME_MAX_CHARS * 2</h2>
 <h2><a id="private_final_static_int_NUM_INODE_BLOCKS__64_4"></a>private final static int NUM_INODE_BLOCKS = 64</h2>
 <p>Declares the number of allowed Inodes in a directory.</p>
 <h2><a id="private_int_fileSize_6"></a>private int fileSize[]</h2>
@@ -13,9 +14,9 @@
 <p>Store names of files in this directory.</p>
 <h2><a id="public_Directoryint_maxFiles_12"></a>public Directory(int maxFiles)</h2>
 <p>Construct a Directory with the given maximum number of files. Initialize fileSize and fileNames to the given maximum number of files.</p>
-<h2><a id="public_void_bytesToDirectorybyte_data_WAS_bytes2directory_14"></a>public void bytesToDirectory(byte data[]) [WAS bytes2directory]</h2>
+<h2><a id="public_void_bytesToDirectorybyte_data_WAS_bytes2directory_14"></a>public void bytes2Directory(byte data[])</h2>
 <p>Initialize this Directory with given data.</p>
-<h2><a id="public_byte_directoryToBytes_WAS_directory2bytes_16"></a>public byte[] directoryToBytes [WAS directory2bytes]</h2>
+<h2><a id="public_byte_directoryToBytes_WAS_directory2bytes_16"></a>public byte[] directory2Bytes</h2>
 <p>Convert this Directory to a byte array.<br>
 Returns byte array.</p>
 <h2><a id="public_short_iallocString_filename_19"></a>public short ialloc(String filename)</h2>
