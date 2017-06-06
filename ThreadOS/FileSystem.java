@@ -8,6 +8,7 @@
 // * Notes:
 // * -----------------------------------------------------------------------------
 // */
+
 public class FileSystem
 {
     /**
@@ -25,37 +26,9 @@ public class FileSystem
      */
     private FileTable fileTable;
 
-    /**
-     * Deallocate all blocks in the given FTE, setting their references to -1
-     *
-     * @param fte FTE to deallocate blocks in
-     * @return Success! (or not)
-     */
-    private boolean deallocateAllBlocks(FileTableEntry fte)
-    {
-        // Deallocate directs
-        for (int i = 0; i < fte.inode.direct.length; i++)
-{            
-    fte.inode.direct[i] = -1;
-superblock.returnBlock(i);
-}
-
-  fte.inode.toDIsk(fte.iNumber); 
-  return true;
-// NOT DO NOT DO  BELOW BELOW
-//        if (fte.inode.indirect < 0)
-//            return true;
-//
-//        byte[] indirect = new byte[Disk.blockSize];
-//
-//        if (SysLib.rawread(fte.inode.indirect, indirect) <= 0)
-//            return false;
-//
-//        for (int i = 0; i < indirect.length; i++)
-//            indirect[i] = -1;
-//
-//        return SysLib.rawwrite(fte.inode.indirect, indirect) > 0;
-    }
+    private static final int SEEK_SET = 0;
+    private static final int SEEK_CUR = 1;
+    private static final int SEEK_END = 2;
 
     /**
      * Construct a FileSystem with the given number of blocks
@@ -88,7 +61,6 @@ superblock.returnBlock(i);
         }
         close(rootFTE);
     }
-
     /**
      * Synchronize file system to disk
      */
@@ -110,16 +82,32 @@ superblock.returnBlock(i);
      */
     boolean format(int maxFiles)
     {
-        if (maxFiles < 0)
-            return false;
-
-        while (!fileTable.fteEmpty());
 
         superblock.format(maxFiles);
-        root = new Directory(maxFiles);
+        root = new Directory(superblock.totalInodes);
         fileTable = new FileTable(root);
-
         return true;
+    }
+
+    /**
+     * Close the given file, commit all file transactions, unregister file from calling thread's file descriptor table
+     *
+     * @param fte FTE to close
+     * @return 0 on success, -1 on failure
+     */
+    boolean close(FileTableEntry fte)
+    {
+        synchronized(fte)
+        {
+            if(--fte.count == 0)
+            {
+                return fileTable.ffree(fte);
+            }
+
+            return true;
+        }
+
+
     }
 
     /**
@@ -132,9 +120,16 @@ superblock.returnBlock(i);
      */
     FileTableEntry open(String fileName, String mode)
     {
-        return fileTable.fteAllocate(fileName, mode);
+        FileTableEntry fte = fileTable.falloc(fileName, mode);
+        if(mode.equals("w"))
+        {
+            if(!deallocAllBlocks(fte))
+            {
+                return null;
+            }
+        }
+        return fte;
     }
-    
     /**
      * Read up to buffer.length() bytes from the given file into the given buffer, starting at the seek pointer, ending at EOF if less than the buffer length.
      *
@@ -142,55 +137,59 @@ superblock.returnBlock(i);
      * @param buffer Buffer to read to
      * @return Returns the number of read bytes or -1 on failure.
      */
-    synchronized int read(FileTableEntry fte, byte[] buffer)
+    int read(FileTableEntry fte, byte[] buffer)
     {
-        // Check args
-        if (!(fte.mode.equals("r") || fte.mode.equals("w+")) || fte == null || buffer == null)
-            return -1;
 
+        int bufferLength = buffer.length;
         int reads = 0;
 
-        int offset = fte.seekPtr % Disk.blockSize;
-
-        int first = 1;
-
-        for (int b = 0; b < buffer.length / Disk.blockSize; b++)
+        synchronized(fte)
         {
-            // TODO is first=1 and then first=0 necessary?
-            byte[] iBuffer = new byte[Disk.blockSize - offset * first];
-            int target = fte.inode.findTargetBlock(fte.seekPtr);
-            if (SysLib.rawread(target, iBuffer) < 0)
-                return -1;
 
-            int smaller;
-            if (Disk.blockSize < buffer.length)
-                smaller = (Disk.blockSize - offset);
-            else
-                smaller = (buffer.length - offset);
-            
-            // Changed 0 to offset in arrayCopy
-            //System.arraycopy(iBuffer, 0, buffer, reads, iBuffer.length);
-            System.arraycopy(iBuffer, offset, buffer, reads, iBuffer.length);
+            int i = 0;
+            int blockSize = 512;
 
-            fte.seekPtr += iBuffer.length;
-            reads += iBuffer.length;
+            while(bufferLength > 0 && fte.seekPtr < fteSize(fte))
+            {
+                int block = fte.inode.findTargetBlock(fte.seekPtr);
+                if(block == -1)
+                {
+                    break;
+                }
 
-            first = 0;
+                byte[] tempData = new byte[blockSize];
+                SysLib.rawread(block, tempData);
+
+                int offset = fte.seekPtr % blockSize;
+
+                int blocksRemaining = blockSize - i;
+
+                int numOfFilesLeft = fteSize(fte) - fte.seekPtr;
+
+                if(blocksRemaining < numOfFilesLeft)
+                {
+                    i = blocksRemaining;
+                }
+                else
+                {
+                    i = numOfFilesLeft;
+                }
+                if(i > bufferLength)
+                {
+                    i = bufferLength;
+                }
+
+                System.arraycopy(tempData, offset, buffer, reads, i);
+                fte.seekPtr += i;
+                bufferLength -= i;
+                reads += i;
+            }
+
         }
-
-        byte[] iBuffer = new byte[(buffer.length - offset) % Disk.blockSize];
-
-        if (SysLib.rawread(fte.inode.findTargetBlock(fte.seekPtr), iBuffer) < 0)
-            return -1;
-
-        System.arraycopy(iBuffer, 0, buffer, reads, iBuffer.length);
-
-        fte.seekPtr += iBuffer.length;
-        reads += iBuffer.length;
 
         return reads;
     }
-    
+
     /**
      * Write the contents of the given buffer to the given file, starting at the seek pointer. This operation may overwrite and/or append.
      *
@@ -198,43 +197,96 @@ superblock.returnBlock(i);
      * @param buffer Buffer to write from
      * @return Returns the number of bytes written or -1 on failure.
      */
-    synchronized int write(FileTableEntry fte, byte[] buffer)
+    int write(FileTableEntry fte, byte[] buffer)
     {
-        // Check args
-        if (!(fte.mode.equals("w") || fte.mode.equals("w+") || fte.mode.equals("a")) || fte == null || buffer == null)
-            return -1;
+        int tempBuffer = buffer.length;
 
-        int bufferSeek = 0; 
-        int writeCount = 0;
-        int block;
-        byte[] iBuffer = new byte[Disk.blockSize];
-
-        while (bufferSeek < buffer.length)
+        if(fte == null || fte.mode.equals("r"))
         {
-            int writes = 0;
-
-            block =  fte.inode.findTargetBlock(fte.seekPtr);
-
-            if (block == 0)
+            return -1;
+        }
+        synchronized (fte)
+        {
+            int writes = writeToTheDisk(fte, buffer);
+            if(fte.seekPtr > fte.inode.length)
             {
-                block = superblock.getFreeBlock();
-                fte.
+                fte.inode.length = fte.seekPtr;
             }
-            
-            for (int i = 0; i < iBuffer.length && bufferSeek < buffer.length; i++, bufferSeek++, writes++)
-                iBuffer[i] = buffer[bufferSeek];
-
-            if(SysLib.rawwrite(block, iBuffer) < 0)
-                return -1;
-            else    // Byte read
-            {
-                // Increase write counter and seek pointer by number of bytes written
-                writeCount += writes;
-                fte.seekPtr += writes;
-            }
+            fte.inode.toDisk(fte.iNumber);
+            return writes;
         }
 
-        return writeCount;
+
+    }
+
+    public int writeToTheDisk(FileTableEntry fte, byte[] buffer)
+    {
+        int tempBuffer = buffer.length;
+        int writes = 0;
+        int blockSize = Disk.blockSize;
+
+        while(tempBuffer > 0)
+        {
+            int tempTarget = fte.inode.findTargetBlock(fte.seekPtr);
+
+            if(tempTarget == -1)
+            {
+                short newTarget = (short) superblock.getFreeBlock();
+
+                int testTarget = fte.inode.getIndexNumber(fte.seekPtr, newTarget);
+
+                if(testTarget == -3)
+                {
+                    short freeBlock = (short) superblock.getFreeBlock();
+
+
+                    if(!fte.inode.setBlock(freeBlock))
+                    {
+                        return -1;
+                    }
+
+                    if(fte.inode.getIndexNumber(fte.seekPtr, newTarget) != 0)
+                    {
+                        return -1;
+                    }
+                }
+                else if(testTarget == -2 || testTarget == -1)
+                {
+                    return -1;
+                }
+                tempTarget = newTarget;
+            }
+
+            byte[] bufferTemp = new byte[blockSize];
+            SysLib.rawread(tempTarget, bufferTemp);
+
+            int tempPointer = fte.seekPtr % blockSize;
+            int difference = blockSize - tempPointer;
+
+            if(difference > tempBuffer)
+            {
+                System.arraycopy(buffer, writes, bufferTemp, tempPointer, tempBuffer);
+                SysLib.rawwrite(tempTarget, bufferTemp);
+
+                fte.seekPtr += tempBuffer;
+                writes += tempBuffer;
+                tempBuffer = 0;
+
+            }
+            else
+            {
+                System.arraycopy(buffer, writes, bufferTemp, tempPointer, difference);
+                SysLib.rawwrite(tempTarget, bufferTemp);
+
+                fte.seekPtr += difference;
+                writes += difference;
+                tempBuffer -= difference;
+            }
+
+        }
+
+        return writes;
+
     }
 
     /**
@@ -254,55 +306,34 @@ superblock.returnBlock(i);
      */
     int seek(FileTableEntry fte, int offset, int origin)
     {
-        if (fte.mode.equals("a"))
-            return -1;
-
-        int seekPointer = fte.seekPtr, length = fte.inode.length;
-
-        // Check args
-        if (fte == null || Math.abs(offset) > length || !(origin >= 0 && origin <= 2))
-            return -1;
-
-
-        // Clamp pointer to 0 if lesser
-        if ((origin == 0 && offset < 0) || (origin == 1 && seekPointer + offset < 0) || (origin == 2 && length + offset < 0))
+        synchronized(fte)
         {
-            fte.seekPtr = 0;
-            return 0;
+            switch(origin)
+            {
+                case SEEK_SET:
+                    fte.seekPtr = offset;
+                case SEEK_CUR:
+                    fte.seekPtr += offset;
+                    break;
+                case SEEK_END:
+                    fte.seekPtr = fte.inode.length + offset;
+                    break;
+                default:
+                    return -1;
+            }
+
+            if(fte.seekPtr < 0)
+            {
+                fte.seekPtr = 0;
+            }
+
+            if(fte.seekPtr > fte.inode.length)
+            {
+                fte.seekPtr = fte.inode.length;
+            }
         }
 
-        // Clamp pointer to length - 1 if greater
-        if ((origin == 0 && offset > length - 1) || (origin == 1 && seekPointer + offset > length - 1) || (origin == 2 && length + offset > length - 1))
-        {
-            fte.seekPtr = length - 1;
-            return 0;
-        }
-
-        // Seek
-        switch (origin)
-        {
-            case 0:
-                fte.seekPtr = offset;
-                break;
-            case 1:
-                fte.seekPtr += offset;
-                break;
-            case 2:
-                fte.seekPtr = length - offset;
-                break;
-        }
-        return 0;
-    }
-
-    /**
-     * Close the given file, commit all file transactions, unregister file from calling thread's file descriptor table
-     *
-     * @param fte FTE to close
-     * @return 0 on success, -1 on failure
-     */
-    boolean close(FileTableEntry fte)
-    {
-        return fileTable.fteFree(fte);
+        return fte.seekPtr;
     }
 
     /**
@@ -313,358 +344,67 @@ superblock.returnBlock(i);
      */
     boolean delete(String fileName)
     {
-        // Check out file
-        FileTableEntry fte = fileTable.fteAllocate(fileName, "r");
+        FileTableEntry fte = open(fileName, "w");
 
-        // If file not checked out, or other threads own, fail
-        if (fte == null || fte.count > 1)
+        if(root.ifree(fte.iNumber) && close(fte))
         {
-            fileTable.fteFree(fte);
-            return false;
+            return true;
         }
 
-        // Mark as unused
-        fte.inode.flag = 0;
-
-        // Free all direct blocks
-        for (int i = 0; i < fte.inode.direct.length; i++)
-            fte.inode.direct[i] = -1;
-
-        if (fte.inode.indirect < 0)
-            return true;
-
-        byte[] indirect = new byte[Disk.blockSize];
-
-        if (SysLib.rawread(fte.inode.indirect, indirect) <= 0)
-            return false;
-
-        for (int i = 0; i < indirect.length; i++)
-            indirect[i] = -1;
-
-        return SysLib.rawwrite(fte.inode.indirect, indirect) > 0;
+        return false;
     }
 
     /**
      * @param fte FTE to get size of
      * @return the size in bytes of the given file
      */
-    int fteSize(FileTableEntry fte)
+    synchronized int fteSize(FileTableEntry fte)
     {
-        return fte.inode.length;
+        synchronized(fte)
+        {
+            Inode inode = fte.inode;
+            return inode.length;
+        }
+    }
+
+    /**
+     * Deallocate all blocks in the given FTE, setting their references to -1
+     *
+     * @param fte FTE to deallocate blocks in
+     * @return Success! (or not)
+     */
+    private boolean deallocAllBlocks(FileTableEntry fte)
+    {
+        deallocate(fte);
+
+        byte[] tempData = fte.inode.freeIndirectBlock();
+
+        if(tempData != null)
+        {
+            returnAllBlocks(tempData);
+        }
+        fte.inode.toDisk(fte.iNumber);
+        return true;
+    }
+
+    private void returnAllBlocks(byte[] data)
+    {
+        short blockID;
+        while((blockID = SysLib.bytes2short(data, 0)) != -1)
+        {
+            superblock.returnBlock(blockID);
+        }
+    }
+
+    private void deallocate(FileTableEntry files)
+    {
+        for(short blockID = 0; blockID < files.inode.DIRECT_SIZE; blockID++)
+        {
+            if(files.inode.direct[blockID] != -1)
+            {
+                superblock.returnBlock(blockID);
+                files.inode.direct[blockID] = -1;
+            }
+        }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-//
-//public class FileSystem
-//{
-//  private SuperBlock superblock;
-//  private Directory directory;
-//  private FileTable filetable;
-//  
-//  public FileSystem(int paramInt) {
-//    superblock = new SuperBlock(paramInt);
-//    
-//
-//    directory = new Directory(superblock.totalInodes);
-//    
-//
-//    filetable = new FileTable(directory);
-//    
-//
-//    FileTableEntry localFileTableEntry = open("/", "r");
-//    int i = fsize(localFileTableEntry);
-//    if (i > 0) {
-//      byte[] arrayOfByte = new byte[i];
-//      read(localFileTableEntry, arrayOfByte);
-//      directory.bytes2directory(arrayOfByte);
-//    }
-//    close(localFileTableEntry);
-//  }
-//  
-//  void sync()
-//  {
-//    FileTableEntry localFileTableEntry = open("/", "w");
-//    byte[] arrayOfByte = directory.directory2bytes();
-//    write(localFileTableEntry, arrayOfByte);
-//    close(localFileTableEntry);
-//    
-//
-//    superblock.sync();
-//  }
-//  
-//  boolean format(int paramInt)
-//  {
-//    while (!filetable.fteEmpty()) {}
-//    
-//
-//
-//    superblock.format(paramInt);
-//    
-//
-//    directory = new Directory(superblock.totalInodes);
-//    
-//
-//    filetable = new FileTable(directory);
-//    
-//    return true;
-//  }
-//  
-//  FileTableEntry open(String paramString1, String paramString2)
-//  {
-//    FileTableEntry localFileTableEntry = filetable.fteAllocate(paramString2, paramString2);
-//    if ((paramString2 == "w") && 
-//      (!deallocAllBlocks(localFileTableEntry)))
-//      return null;
-//    return localFileTableEntry;
-//  }
-//  
-//  boolean close(FileTableEntry paramFileTableEntry)
-//  {
-//    synchronized (paramFileTableEntry)
-//    {
-//      paramFileTableEntry.count -= 1;
-//      if (paramFileTableEntry.count > 0)
-//        return true;
-//    }
-//    return filetable.fteFree(paramFileTableEntry);
-//  }
-//  
-//  int fsize(FileTableEntry paramFileTableEntry) {
-//    synchronized (paramFileTableEntry) {
-//      return paramFileTableEntry.inode.length;
-//    }
-//  }
-//  
-// //    int read(FileTableEntry fte, byte[] buffer)
-////    {
-////        // Check args
-////        if (!(fte.mode.equals("r") || fte.mode.equals("w+")) || fte == null || buffer == null)
-////            return -1;
-////
-////        int reads = 0;
-////
-////        int offset = fte.seekPtr % Disk.blockSize;
-////
-////        int first = 1;
-////
-////        for (int b = 0; b < buffer.length / Disk.blockSize; b++)
-////        {
-////            byte[] iBuffer = new byte[Disk.blockSize - offset * first];
-////            if (SysLib.rawread(fte.inode.findTargetBlock(fte.seekPtr), iBuffer) < 0)
-////                return -1;
-////
-////            System.arraycopy(iBuffer, 0, buffer, reads, iBuffer.length);
-////
-////            fte.seekPtr += iBuffer.length;
-////            reads += iBuffer.length;
-////
-////            first = 0;
-////        }
-////
-////        byte[] iBuffer = new byte[(buffer.length - offset) % Disk.blockSize];
-////
-////        if (SysLib.rawread(fte.inode.findTargetBlock(fte.seekPtr), iBuffer) < 0)
-////            return -1;
-////
-////        System.arraycopy(iBuffer, 0, buffer, reads, iBuffer.length);
-////
-////        fte.seekPtr += iBuffer.length;
-////        reads += iBuffer.length;
-////
-////        return reads;
-////    } 
-//  
-//  synchronized int read(FileTableEntry paramFileTableEntry, byte[] paramArrayOfByte) {
-//    if ((paramFileTableEntry.mode == "w") || (paramFileTableEntry.mode == "a")) {
-//      return -1;
-//    }
-//    int i = 0;
-//    int j = paramArrayOfByte.length;
-//    
-//    synchronized (paramFileTableEntry) {
-//      while ((j > 0) && (paramFileTableEntry.seekPtr < fsize(paramFileTableEntry)))
-//      {
-//
-//
-//        int k = paramFileTableEntry.inode.findTargetBlock(paramFileTableEntry.seekPtr);
-//        if (k == -1) {
-//          break;
-//        }
-//        byte[] arrayOfByte = new byte['Ȁ'];
-//        SysLib.rawread(k, arrayOfByte);
-//        
-//
-//        int m = paramFileTableEntry.seekPtr % 512;
-//        
-//
-//        int n = 512 - m;
-//        int i1 = fsize(paramFileTableEntry) - paramFileTableEntry.seekPtr;
-//        
-//        int i2 = Math.min(Math.min(n, j), i1);
-//        //int readInto = (buffer.length > Disk.blockSize ? Disk.blockSize: buffer.length) - intraBlockOffset;
-//        
-//        System.arraycopy(arrayOfByte, m, paramArrayOfByte, i, i2);
-//        
-//
-//        paramFileTableEntry.seekPtr += i2;
-//        i += i2;
-//        j -= i2;
-//      }
-//      return i;
-//    }
-//  }
-//  
-//  synchronized int write(FileTableEntry paramFileTableEntry, byte[] paramArrayOfByte)
-//  {
-//    if (paramFileTableEntry.mode == "r") {
-//      return -1;
-//    }
-//    synchronized (paramFileTableEntry) {
-//      int i = 0;
-//      int j = paramArrayOfByte.length;
-//      
-//      while (j > 0)
-//      {
-//        int k = paramFileTableEntry.inode.findTargetBlock(paramFileTableEntry.seekPtr);
-//        if (k == -1) 
-//        {
-//          short m = (short)superblock.getFreeBlock();
-//          
-//          paramFileTableEntry.inode.registerTargetBlock(paramFileTableEntry.seekPtr, m);
-////          switch (paramFileTableEntry.inode.registerTargetBlock(paramFileTableEntry.seekPtr, m)) 
-////          {
-////          case 0: 
-////            break;
-////          case -2: 
-////          case -1: 
-////            SysLib.cerr("ThreadOS: filesystem panic on write\n");
-////            return -1;
-////          case -3: 
-////            short s = (short)superblock.getFreeBlocks();
-////            if (!paramFileTableEntry.inode.registerIndexBlock(s))
-////            {
-////              SysLib.cerr("ThreadOS: panic on write\n");
-////              return -1;
-////            }
-////            if (paramFileTableEntry.inode.registerTargetBlock(paramFileTableEntry.seekPtr, m) != 0)
-////            {
-////
-////              SysLib.cerr("ThreadOS: panic on write\n");
-////              return -1;
-////            }
-////            break; }
-//          k = m;
-//        }
-//        
-//        byte[] arrayOfByte = new byte['Ȁ'];
-//        
-//
-//        SysLib.rawread(k, arrayOfByte);
-////        if (SysLib.rawread(k, arrayOfByte) == -1) {
-////          System.exit(2);
-////        }
-//
-//        int intraBlockOffset = paramFileTableEntry.seekPtr % 512;
-//        int i1 = 512 - intraBlockOffset;
-//        
-//        int i2 = Math.min(i1, j);
-//        
-//        System.arraycopy(paramArrayOfByte, i, arrayOfByte, intraBlockOffset, i2);
-//        
-//        SysLib.rawwrite(k, arrayOfByte);
-//        
-//        
-//        
-//        
-//        paramFileTableEntry.seekPtr += i2;
-//        i += i2;
-//        j -= i2;
-//        
-//
-//        if (paramFileTableEntry.seekPtr > paramFileTableEntry.inode.length) {
-//          paramFileTableEntry.inode.length = paramFileTableEntry.seekPtr;
-//        }
-//      }
-//      //paramFileTableEntry.inode.toDisk(paramFileTableEntry.iNumber);
-//      
-//      return i;
-//    }
-//  }
-//  
-//  private boolean deallocAllBlocks(FileTableEntry paramFileTableEntry)
-//  {
-//    if (paramFileTableEntry.inode.count != 1) {
-//      return false;
-//    }
-//    byte[] arrayOfByte = paramFileTableEntry.inode.unregisterIndexBlock();
-//    if (arrayOfByte != null) {
-//      int i = 0;
-//      int j;
-//      while ((j = SysLib.bytes2short(arrayOfByte, i)) != -1) {
-//        superblock.returnBlock(j);
-//      }
-//    }
-//    for (int i = 0; i < 11; i++)
-//      if (paramFileTableEntry.inode.direct[i] != -1) {
-//        superblock.returnBlock(paramFileTableEntry.inode.direct[i]);
-//        paramFileTableEntry.inode.direct[i] = -1;
-//      }
-//    paramFileTableEntry.inode.toDisk(paramFileTableEntry.iNumber);
-//    return true;
-//  }
-//  
-//  boolean delete(String paramString) {
-//    FileTableEntry localFileTableEntry = open(paramString, "w");
-//    short s = localFileTableEntry.iNumber;
-//    return (close(localFileTableEntry)) && (directory.ifree(s));
-//  }
-//  
-//  private final int SEEK_SET = 0;
-//  private final int SEEK_CUR = 1;
-//  private final int SEEK_END = 2;
-//  
-//  int seek(FileTableEntry paramFileTableEntry, int paramInt1, int paramInt2) {
-//    synchronized (paramFileTableEntry)
-//    {
-//
-//
-//
-//
-//
-//      switch (paramInt2) {
-//      case 0: 
-//        if ((paramInt1 >= 0) && (paramInt1 <= fsize(paramFileTableEntry))) {
-//          paramFileTableEntry.seekPtr = paramInt1;
-//        } else
-//          return -1;
-//        break;
-//      case 1: 
-//        if ((paramFileTableEntry.seekPtr + paramInt1 >= 0) && (paramFileTableEntry.seekPtr + paramInt1 <= fsize(paramFileTableEntry)))
-//        {
-//          paramFileTableEntry.seekPtr += paramInt1;
-//        } else
-//          return -1;
-//        break;
-//      case 2: 
-//        if ((fsize(paramFileTableEntry) + paramInt1 >= 0) && (fsize(paramFileTableEntry) + paramInt1 <= fsize(paramFileTableEntry)))
-//        {
-//          paramFileTableEntry.seekPtr = (fsize(paramFileTableEntry) + paramInt1);
-//        } else
-//          return -1;
-//        break;
-//      }
-//      return paramFileTableEntry.seekPtr;
-//    }
-//  }
-//}
